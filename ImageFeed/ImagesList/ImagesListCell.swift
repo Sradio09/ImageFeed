@@ -9,15 +9,17 @@ final class ImagesListCell: UITableViewCell {
     @IBOutlet weak var dateLabel: UILabel!
     
     private var gradientLayer: CAGradientLayer?
+    var onLikeButtonTapped: (() -> Void)?
     
     override func layoutSubviews() {
         super.layoutSubviews()
         addGradient()
         
         gradientView.layer.cornerRadius = 16
-            gradientView.layer.maskedCorners = [.layerMinXMaxYCorner, .layerMaxXMaxYCorner]
-            gradientView.layer.masksToBounds = true
+        gradientView.layer.maskedCorners = [.layerMinXMaxYCorner, .layerMaxXMaxYCorner]
+        gradientView.layer.masksToBounds = true
     }
+    
     private func addGradient() {
         gradientLayer?.removeFromSuperlayer()
         
@@ -32,8 +34,6 @@ final class ImagesListCell: UITableViewCell {
         gradientView.layer.insertSublayer(gradient, at: 0)
         gradientLayer = gradient
     }
-    
-    var onLikeButtonTapped: (() -> Void)?
     
     @IBAction func likeButtonTapped(_ sender: UIButton) {
         sender.isSelected.toggle()

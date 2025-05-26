@@ -1,6 +1,6 @@
 import UIKit
 
-class ImagesListViewController: UIViewController {
+final class ImagesListViewController: UIViewController {
     
     @IBOutlet private var tableView: UITableView!
     
@@ -23,7 +23,7 @@ class ImagesListViewController: UIViewController {
         tableView.delegate = self
     }
     
-    func configCell(for cell: ImagesListCell, at indexPath: IndexPath) {
+    private func configCell(for cell: ImagesListCell, at indexPath: IndexPath) {
         
         let imageName = photosName[indexPath.row]
         cell.photoImageView.image = UIImage(named: imageName)
