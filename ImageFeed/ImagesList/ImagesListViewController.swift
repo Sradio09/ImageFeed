@@ -7,13 +7,8 @@ final class ImagesListViewController: UIViewController {
     private let photosName: [String] = Array(0..<20).map{ "\($0)" }
     private let showSingleImageSegueIdentifier = "ShowSingleImage"
     
-    private lazy var dateFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .long
-        formatter.timeStyle = .none
-        formatter.locale = Locale(identifier: "ru_RU")
-        return formatter
-    }()
+    private let defaultRowHeight: CGFloat = 200
+    private let verticalPadding: CGFloat = 24
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -23,21 +18,26 @@ final class ImagesListViewController: UIViewController {
         tableView.dataSource = self
         tableView.delegate = self
     }
+    
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        if segue.identifier == showSingleImageSegueIdentifier {
-            guard
-                let viewController = segue.destination as? SingleImageViewController,
-                let indexPath = sender as? IndexPath
-            else {
-                super.prepare(for: segue, sender: sender)
-                return
-            }
-            let image = UIImage(named: photosName[indexPath.row])
-            viewController.image = image
-        } else {
+        guard segue.identifier == showSingleImageSegueIdentifier else {
             super.prepare(for: segue, sender: sender)
+            return
         }
+        
+        guard
+            let viewController = segue.destination as? SingleImageViewController,
+            let indexPath = sender as? IndexPath
+        else {
+            super.prepare(for: segue, sender: sender)
+            return
+        }
+        
+        let imageName = photosName[indexPath.row]
+        viewController.image = UIImage(named: imageName)
     }
+    
+    
     
     private func configCell(for cell: ImagesListCell, at indexPath: IndexPath) {
         
@@ -45,7 +45,7 @@ final class ImagesListViewController: UIViewController {
         cell.photoImageView.image = UIImage(named: imageName)
         
         let currentDate = Date()
-        cell.dateLabel.text = dateFormatter.string(from: currentDate)
+        cell.dateLabel.text = DateFormatter.longStyle.string(from: currentDate)
         
         cell.likeButton.isSelected = indexPath.row % 2 == 0
         
@@ -55,21 +55,25 @@ final class ImagesListViewController: UIViewController {
     }
 }
 
+extension DateFormatter {
+    static let longStyle: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .long
+        formatter.timeStyle = .none
+        formatter.locale = Locale(identifier: "ru_RU") // Учитываем локализацию
+        return formatter
+    }()
+}
 
 extension ImagesListViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         let imageName = photosName[indexPath.row]
         guard let image = UIImage(named: imageName) else {
-            return 200
+            return defaultRowHeight
         }
-
-        let imageSize = image.size
-        let imageViewWidth = tableView.bounds.width
-        let scale = imageViewWidth / imageSize.width
-        let imageViewHeight = imageSize.height * scale
-
-        let topBottomInset: CGFloat = 24
-        return imageViewHeight + topBottomInset
+        
+        let scale = tableView.bounds.width / image.size.width
+                return image.size.height * scale + verticalPadding
     }
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         performSegue(withIdentifier: showSingleImageSegueIdentifier, sender: indexPath)
