@@ -15,10 +15,8 @@ final class WebViewViewController: UIViewController {
     @IBOutlet private var progressView: UIProgressView!
 
     weak var delegate: WebViewViewControllerDelegate?
-    
     override func viewDidLoad() {
         super.viewDidLoad()
-
         webView.navigationDelegate = self
 
         loadAuthView()
