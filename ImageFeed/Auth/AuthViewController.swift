@@ -1,4 +1,5 @@
 import UIKit
+import ProgressHUD
 
 protocol AuthViewControllerDelegate: AnyObject {
     func didAuthenticate(_ vc: AuthViewController)
@@ -12,7 +13,6 @@ final class AuthViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        
         configureBackButton()
     }
     
@@ -36,22 +36,37 @@ final class AuthViewController: UIViewController {
         navigationItem.backBarButtonItem = UIBarButtonItem(title: "", style: .plain, target: nil, action: nil)
         navigationItem.backBarButtonItem?.tintColor = UIColor(named: "ypBlack")
     }
+    
+    // MARK: - Alert
+    
+    private func showLoginErrorAlert() {
+        let alert = UIAlertController(
+            title: "Что-то пошло не так",
+            message: "Не удалось войти в систему",
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "Ок", style: .default))
+        present(alert, animated: true)
+    }
 }
 
 extension AuthViewController: WebViewViewControllerDelegate {
     func webViewViewController(_ vc: WebViewViewController, didAuthenticateWithCode code: String) {
         vc.dismiss(animated: true) { [weak self] in
+            ProgressHUD.animate()
             guard let self else { return }
-            
+           
             self.fetchOAuthToken(code) { result in
+                ProgressHUD.dismiss()
                 switch result {
                 case .success:
                     DispatchQueue.main.async {
                         self.delegate?.didAuthenticate(self)
                     }
                 case .failure:
-                    // TODO: [Sprint 11] Добавьте обработку ошибки (например, показать alert)
-                    break
+                    DispatchQueue.main.async {
+                        self.showLoginErrorAlert()
+                    }
                 }
             }
         }
