@@ -2,7 +2,7 @@ import Foundation
 
 struct OAuthTokenResponseBody: Decodable {
     let accessToken: String
-    
+
     enum CodingKeys: String, CodingKey {
         case accessToken = "access_token"
     }
@@ -10,16 +10,21 @@ struct OAuthTokenResponseBody: Decodable {
 
 final class OAuth2Service {
     static let shared = OAuth2Service()
-    
     private init() {}
-    
+
     private var task: URLSessionTask?
     private var lastCode: String?
     private var completions: [(Result<String, Error>) -> Void] = []
     private let tokenStorage = OAuth2TokenStorage.shared
-    
+
+    // MARK: - Local constants
+    private enum OAuth2Constants {
+        static let syncQueueLabel = "com.Mikhail.OAuth2Service.syncQueue"
+        static let tokenURL = "https://unsplash.com/oauth/token"
+    }
+
     // Очередь для синхронизации
-    private let syncQueue = DispatchQueue(label: "com.Mikhail.OAuth2Service.syncQueue")
+    private let syncQueue = DispatchQueue(label: OAuth2Constants.syncQueueLabel)
 
     func fetchOAuthToken(code: String, completion: @escaping (Result<String, Error>) -> Void) {
         syncQueue.async {
@@ -36,7 +41,7 @@ final class OAuth2Service {
 
             self.lastCode = code
             self.completions.append(completion)
-            
+
             guard let request = self.makeOAuthTokenRequest(code: code) else {
                 self.completeAll(with: .failure(OAuth2Error.invalidRequest))
                 return
@@ -44,7 +49,7 @@ final class OAuth2Service {
 
             let task = URLSession.shared.objectTask(for: request) { [weak self] (result: Result<OAuthTokenResponseBody, Error>) in
                 guard let self = self else { return }
-                
+
                 self.syncQueue.async {
                     switch result {
                     case .success(let responseBody):
@@ -58,12 +63,12 @@ final class OAuth2Service {
                     self.task = nil
                 }
             }
-            
+
             self.task = task
             task.resume()
         }
     }
-    
+
     private func completeAll(with result: Result<String, Error>) {
         let completionsCopy = self.completions
         self.completions.removeAll()
@@ -74,8 +79,8 @@ final class OAuth2Service {
     }
 
     private func makeOAuthTokenRequest(code: String) -> URLRequest? {
-        guard let url = URL(string: "https://unsplash.com/oauth/token") else { return nil }
-        
+        guard let url = URL(string: OAuth2Constants.tokenURL) else { return nil }
+
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         let bodyParams = [
@@ -90,11 +95,12 @@ final class OAuth2Service {
             .joined(separator: "&")
             .data(using: .utf8)
         request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
-        
+
         return request
     }
-    
+
     enum OAuth2Error: Error {
         case invalidRequest
     }
 }
+
