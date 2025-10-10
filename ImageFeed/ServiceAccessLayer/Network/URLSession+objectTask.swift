@@ -7,7 +7,7 @@ extension URLSession {
     ) -> URLSessionDataTask {
         dataTask(with: request) { data, response, error in
             if let error {
-                print("Network error:", error)
+                print("[objectTask]: NetworkError - \(error.localizedDescription)")
                 DispatchQueue.main.async {
                     completion(.failure(error))
                 }
@@ -16,7 +16,7 @@ extension URLSession {
             
             guard let response = response as? HTTPURLResponse else {
                 let error = URLError(.badServerResponse)
-                print("Invalid response")
+                print("[objectTask]: InvalidResponseError - нет HTTPURLResponse")
                 DispatchQueue.main.async {
                     completion(.failure(error))
                 }
@@ -25,7 +25,7 @@ extension URLSession {
             
             guard (200..<300).contains(response.statusCode) else {
                 let errorString = data.flatMap { String(data: $0, encoding: .utf8) } ?? "No data"
-                print("HTTP error \(response.statusCode):", errorString)
+                print("[objectTask]: HTTPError - код: \(response.statusCode), данные: \(errorString)")
                 DispatchQueue.main.async {
                     completion(.failure(URLError(.badServerResponse)))
                 }
@@ -34,7 +34,7 @@ extension URLSession {
             
             guard let data = data else {
                 let error = URLError(.zeroByteResource)
-                print("No data received")
+                print("[objectTask]: EmptyDataError - данные отсутствуют")
                 DispatchQueue.main.async {
                     completion(.failure(error))
                 }
@@ -47,8 +47,7 @@ extension URLSession {
                     completion(.success(decoded))
                 }
             } catch {
-                print("Decoding error:", error)
-                print("Raw response:", String(data: data, encoding: .utf8) ?? "nil")
+                print("[objectTask]: DecodingError - \(error.localizedDescription), данные: \(String(data: data, encoding: .utf8) ?? "")")
                 DispatchQueue.main.async {
                     completion(.failure(error))
                 }
@@ -56,3 +55,4 @@ extension URLSession {
         }
     }
 }
+
