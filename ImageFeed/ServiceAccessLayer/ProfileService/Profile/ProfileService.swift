@@ -10,6 +10,10 @@ final class ProfileService {
     private var lastToken: String?
     private var completions: [(Result<Profile, Error>) -> Void] = []
     
+    func clean() {
+            profile = nil
+        }
+    
     func fetchProfile(_ token: String, completion: @escaping (Result<Profile, Error>) -> Void) {
         if lastToken == token, task != nil {
             completions.append(completion)

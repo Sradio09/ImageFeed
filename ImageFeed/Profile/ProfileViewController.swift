@@ -156,7 +156,22 @@ final class ProfileViewController: UIViewController {
     // MARK: - Actions
     @objc
     private func didTapLogoutButton() {
-        // TODO: реализовать выход из профиля
+        let alert = UIAlertController(
+            title: "Выход из аккаунта",
+            message: "Вы уверены, что хотите выйти?",
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "Отмена", style: .cancel))
+        alert.addAction(UIAlertAction(title: "Выйти", style: .destructive) { _ in
+            ProfileLogoutService.shared.logout()
+
+            guard let window = UIApplication.shared.windows.first else { return }
+            let splashViewController = SplashViewController()
+            window.rootViewController = splashViewController
+            window.makeKeyAndVisible()
+        })
+
+        present(alert, animated: true)
     }
     
     // MARK: - Deinit

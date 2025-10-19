@@ -9,6 +9,10 @@ final class ProfileImageService {
     private(set) var avatarURL: String?
     private var task: URLSessionTask?
     
+    func clean() {
+            avatarURL = nil
+        }
+    
     func fetchProfileImageURL(
         username: String,
         completion: @escaping (Result<String, Error>) -> Void
