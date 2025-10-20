@@ -13,7 +13,6 @@ final class TabBarController: UITabBarController {
     private func setupViewControllers() {
         let storyboard = UIStoryboard(name: "Main", bundle: .main)
         
-        // Первый экран — лента
         let imagesListViewController = storyboard.instantiateViewController(
             withIdentifier: "ImagesListViewController"
         )
@@ -23,7 +22,6 @@ final class TabBarController: UITabBarController {
             selectedImage: nil
         )
         
-        // Второй экран — профиль
         let profileViewController = ProfileViewController()
         profileViewController.tabBarItem = UITabBarItem(
             title: "",
@@ -31,7 +29,6 @@ final class TabBarController: UITabBarController {
             selectedImage: nil
         )
         
-        // Устанавливаем контроллеры таббара
         self.viewControllers = [imagesListViewController, profileViewController]
     }
     

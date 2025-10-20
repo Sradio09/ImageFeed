@@ -4,7 +4,7 @@ import WebKit
 final class ProfileLogoutService {
     static let shared = ProfileLogoutService()
     private init() { }
-
+    
     func logout() {
         OAuth2TokenStorage.shared.token = nil
         cleanCookies()
@@ -12,7 +12,7 @@ final class ProfileLogoutService {
         ProfileImageService.shared.clean()
         ImagesListService.shared.clean()
     }
-
+    
     // MARK: - Очистка Cookies
     private func cleanCookies() {
         HTTPCookieStorage.shared.removeCookies(since: Date.distantPast)

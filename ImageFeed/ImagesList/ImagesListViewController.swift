@@ -8,13 +8,13 @@ final class ImagesListViewController: UIViewController {
     private let imagesListService = ImagesListService.shared
     private var photos: [Photo] = []
     private var imagesListServiceObserver: NSObjectProtocol?
+    private var lastReloadTime = Date(timeIntervalSince1970: 0)
     
     private let showSingleImageSegueIdentifier = "ShowSingleImage"
-
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        tableView.rowHeight = UITableView.automaticDimension
         tableView.estimatedRowHeight = 200
         tableView.contentInset = UIEdgeInsets(top: 12, left: 0, bottom: 12, right: 0)
         tableView.dataSource = self
@@ -52,26 +52,36 @@ final class ImagesListViewController: UIViewController {
         }
     }
     
-    // MARK: - Table Updates
+    // MARK: - Updates
     private func updateTableViewAnimated() {
         let oldCount = photos.count
         let newPhotos = imagesListService.photos
         let newCount = newPhotos.count
-
+        
         guard newCount > oldCount else {
             photos = newPhotos
             return
         }
-
-        photos = newPhotos
-
+        
         let indexPaths = (oldCount..<newCount).map { IndexPath(row: $0, section: 0) }
-
+        photos = newPhotos
+        
         tableView.performBatchUpdates({
             tableView.insertRows(at: indexPaths, with: .automatic)
         }, completion: nil)
     }
-
+    
+    // MARK: - Row reload optimization
+    private func reloadRowIfNeeded(at indexPath: IndexPath) {
+        let now = Date()
+        guard now.timeIntervalSince(lastReloadTime) > 0.3 else { return }
+        lastReloadTime = now
+        
+        if let visibleIndexPaths = tableView.indexPathsForVisibleRows,
+           visibleIndexPaths.contains(indexPath) {
+            tableView.reloadRows(at: [indexPath], with: .none)
+        }
+    }
 }
 
 // MARK: - UITableViewDataSource
@@ -79,20 +89,41 @@ extension ImagesListViewController: UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         photos.count
     }
-
+    
     func tableView(_ tableView: UITableView,
                    cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        guard
-            let cell = tableView.dequeueReusableCell(
-                withIdentifier: ImagesListCell.reuseIdentifier,
-                for: indexPath
-            ) as? ImagesListCell
-        else { return UITableViewCell() }
-
+        guard let imageCell = tableView.dequeueReusableCell(
+            withIdentifier: ImagesListCell.reuseIdentifier,
+            for: indexPath
+        ) as? ImagesListCell else { return UITableViewCell() }
+        
         let photo = photos[indexPath.row]
-        cell.delegate = self
-        cell.configure(with: photo)
-        return cell
+        imageCell.delegate = self
+        
+        if let url = URL(string: photo.thumbImageURL) {
+            imageCell.photoImageView.kf.indicatorType = .activity
+            imageCell.photoImageView.kf.setImage(
+                with: url,
+                placeholder: UIImage(named: "Stub")
+            ) { [weak self] result in
+                guard let self else { return }
+                if case .success = result {
+                    self.reloadRowIfNeeded(at: indexPath)
+                }
+            }
+        } else {
+            imageCell.photoImageView.image = UIImage(named: "Stub")
+        }
+        
+        imageCell.setIsLiked(photo.isLiked)
+        
+        if let date = photo.createdAt {
+            imageCell.dateLabel.text = ImagesListCell.dateFormatter.string(from: date)
+        } else {
+            imageCell.dateLabel.text = ""
+        }
+        
+        return imageCell
     }
 }
 
@@ -106,37 +137,41 @@ extension ImagesListViewController: UITableViewDelegate {
         }
     }
     
-    func tableView(_ tableView: UITableView,
-                   didSelectRowAt indexPath: IndexPath) {
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        let photo = photos[indexPath.row]
+        let imageWidth = tableView.bounds.width
+        let imageHeight = imageWidth / photo.aspectRatio
+        return imageHeight
+    }
+    
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         performSegue(withIdentifier: showSingleImageSegueIdentifier, sender: indexPath)
     }
 }
 
-// MARK: - ImagesListCellDelegate (лайки)
+// MARK: - ImagesListCellDelegate
 extension ImagesListViewController: ImagesListCellDelegate {
     func imageListCellDidTapLike(_ cell: ImagesListCell) {
         guard let indexPath = tableView.indexPath(for: cell) else { return }
         let photo = photos[indexPath.row]
-
-
-        imagesListService.changeLike(photoId: photo.id, isLike: !photo.isLiked) { [weak self] result in
+        let newLikeState = !photo.isLiked
+        
+        cell.setLikeLoading(true)
+        
+        imagesListService.changeLike(photoId: photo.id, isLike: newLikeState) { [weak self] result in
             guard let self else { return }
-            UIBlockingProgressHUD.dismiss()
-
-            switch result {
-            case .success:
-                // Обновляем фото из сервиса
-                self.photos = self.imagesListService.photos
-                let updatedPhoto = self.photos[indexPath.row]
-
-                // Обновляем состояние лайка
-                if let updatedCell = self.tableView.cellForRow(at: indexPath) as? ImagesListCell {
-                    updatedCell.setIsLiked(updatedPhoto.isLiked)
+            DispatchQueue.main.async {
+                cell.setLikeLoading(false)
+                
+                switch result {
+                case .success:
+                    self.photos = self.imagesListService.photos
+                    cell.setIsLiked(self.photos[indexPath.row].isLiked)
                     UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                case .failure:
+                    cell.setIsLiked(photo.isLiked)
+                    self.showLikeErrorAlert()
                 }
-
-            case .failure:
-                self.showLikeErrorAlert()
             }
         }
     }

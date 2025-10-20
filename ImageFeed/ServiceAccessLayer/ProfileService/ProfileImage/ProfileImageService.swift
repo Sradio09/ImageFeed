@@ -10,8 +10,8 @@ final class ProfileImageService {
     private var task: URLSessionTask?
     
     func clean() {
-            avatarURL = nil
-        }
+        avatarURL = nil
+    }
     
     func fetchProfileImageURL(
         username: String,
@@ -57,9 +57,8 @@ final class ProfileImageService {
         guard let url = URL(string: "https://api.unsplash.com/users/\(username)") else {
             return nil
         }
-        
         var request = URLRequest(url: url)
-        request.httpMethod = "GET"
+        request.method = .get
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         return request
     }

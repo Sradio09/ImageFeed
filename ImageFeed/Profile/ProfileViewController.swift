@@ -38,30 +38,24 @@ final class ProfileViewController: UIViewController {
     }
     
     private func setupUI() {
-        // Настройка аватарки
         imageView.translatesAutoresizingMaskIntoConstraints = false
         
-        // Имя
         nameLabel.font = UIFont.boldSystemFont(ofSize: 23)
         nameLabel.textColor = .ypWhite
         nameLabel.translatesAutoresizingMaskIntoConstraints = false
         
-        // Логин
         loginNameLabel.font = UIFont.systemFont(ofSize: 13)
         loginNameLabel.textColor = .ypGray
         loginNameLabel.translatesAutoresizingMaskIntoConstraints = false
         
-        // Описание
         descriptionLabel.font = UIFont.systemFont(ofSize: 13)
         descriptionLabel.textColor = .ypWhite
         descriptionLabel.translatesAutoresizingMaskIntoConstraints = false
         
-        // Кнопка выхода
         logoutButton.setImage(UIImage(named: "Exit"), for: .normal)
         logoutButton.addTarget(self, action: #selector(didTapLogoutButton), for: .touchUpInside)
         logoutButton.translatesAutoresizingMaskIntoConstraints = false
         
-        // Добавление всех сабвью
         [imageView, nameLabel, loginNameLabel, descriptionLabel, logoutButton].forEach {
             view.addSubview($0)
         }
@@ -164,13 +158,13 @@ final class ProfileViewController: UIViewController {
         alert.addAction(UIAlertAction(title: "Отмена", style: .cancel))
         alert.addAction(UIAlertAction(title: "Выйти", style: .destructive) { _ in
             ProfileLogoutService.shared.logout()
-
+            
             guard let window = UIApplication.shared.windows.first else { return }
             let splashViewController = SplashViewController()
             window.rootViewController = splashViewController
             window.makeKeyAndVisible()
         })
-
+        
         present(alert, animated: true)
     }
     

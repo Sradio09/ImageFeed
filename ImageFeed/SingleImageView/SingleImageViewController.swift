@@ -39,8 +39,8 @@ final class SingleImageViewController: UIViewController {
         
         UIBlockingProgressHUD.show()
         imageView.kf.setImage(with: url) { [weak self] result in
-            guard let self else { return }
             UIBlockingProgressHUD.dismiss()
+            guard let self else { return }
             
             switch result {
             case .success(let imageResult):

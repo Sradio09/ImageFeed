@@ -1,4 +1,5 @@
 import Foundation
+import CoreGraphics
 
 struct Photo {
     let id: String
@@ -9,4 +10,8 @@ struct Photo {
     let largeImageURL: String
     let fullImageURL: String
     let isLiked: Bool
+    
+    var aspectRatio: CGFloat {
+        size.height == 0 ? 1 : size.width / size.height
+    }
 }
