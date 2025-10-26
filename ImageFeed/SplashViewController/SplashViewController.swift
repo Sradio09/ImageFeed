@@ -86,11 +86,25 @@ final class SplashViewController: UIViewController {
             assertionFailure("Invalid window configuration")
             return
         }
-        
+
         let tabBarController = UIStoryboard(name: "Main", bundle: .main)
             .instantiateViewController(withIdentifier: "TabBarViewController")
+
+        if let tabBarController = tabBarController as? UITabBarController,
+           let viewControllers = tabBarController.viewControllers {
+            for viewController in viewControllers {
+                if let navController = viewController as? UINavigationController,
+                   let profileVC = navController.topViewController as? ProfileViewController {
+                    let presenter = ProfilePresenter()
+                    profileVC.configure(presenter)
+                }
+            }
+        }
+
         window.rootViewController = tabBarController
+        window.makeKeyAndVisible()
     }
+
 }
 
 // MARK: - AuthViewControllerDelegate

@@ -11,24 +11,38 @@ final class AuthViewController: UIViewController {
     
     weak var delegate: AuthViewControllerDelegate?
     
+    @IBOutlet private weak var loginButton: UIButton!
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         configureBackButton()
+        
+        loginButton.accessibilityIdentifier = "Authenticate"
+
     }
     
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         if segue.identifier == showWebViewSegueIdentifier {
-            guard
-                let webViewViewController = segue.destination as? WebViewViewController
-            else {
+            guard let webViewViewController = segue.destination as? WebViewViewController else {
                 assertionFailure("Failed to prepare for \(showWebViewSegueIdentifier)")
                 return
             }
+            
             webViewViewController.delegate = self
+            
+            let presenter = WebViewPresenter(
+                view: webViewViewController,
+                authHelper: AuthHelper(configuration: .standard)
+            )
+            
+            webViewViewController.presenter = presenter
         } else {
             super.prepare(for: segue, sender: sender)
         }
     }
+    
+    
+    
     
     private func configureBackButton() {
         navigationController?.navigationBar.backIndicatorImage = UIImage(named: "nav_back_button")

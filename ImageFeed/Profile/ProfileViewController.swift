@@ -1,4 +1,3 @@
-
 import UIKit
 import Kingfisher
 
@@ -10,7 +9,15 @@ private enum ProfileUIConstants {
     static let spacing: CGFloat = 8
 }
 
-final class ProfileViewController: UIViewController {
+final class ProfileViewController: UIViewController, ProfileViewControllerProtocol {
+    
+    // MARK: - Presenter
+    private var presenter: ProfilePresenterProtocol!
+    
+    func configure(_ presenter: ProfilePresenterProtocol) {
+        self.presenter = presenter
+        presenter.view = self
+    }
     
     // MARK: - UI Elements
     private let imageView = UIImageView(image: UIImage(named: "avatar"))
@@ -19,17 +26,13 @@ final class ProfileViewController: UIViewController {
     private let descriptionLabel = UILabel()
     private let logoutButton = UIButton(type: .custom)
     
-    // MARK: - Properties
-    private var profileImageServiceObserver: NSObjectProtocol?
-    
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
         setupView()
         setupUI()
         setupLayout()
-        setupObservers()
-        updateAvatar()
+        presenter.viewDidLoad()
     }
     
     // MARK: - Setup
@@ -38,30 +41,28 @@ final class ProfileViewController: UIViewController {
     }
     
     private func setupUI() {
-        imageView.translatesAutoresizingMaskIntoConstraints = false
+        [imageView, nameLabel, loginNameLabel, descriptionLabel, logoutButton].forEach {
+            view.addSubview($0)
+            $0.translatesAutoresizingMaskIntoConstraints = false
+        }
         
         nameLabel.font = UIFont.boldSystemFont(ofSize: 23)
         nameLabel.textColor = .ypWhite
-        nameLabel.translatesAutoresizingMaskIntoConstraints = false
+        nameLabel.accessibilityIdentifier = "nameLabel"
         
         loginNameLabel.font = UIFont.systemFont(ofSize: 13)
         loginNameLabel.textColor = .ypGray
-        loginNameLabel.translatesAutoresizingMaskIntoConstraints = false
+        loginNameLabel.accessibilityIdentifier = "loginLabel"
         
         descriptionLabel.font = UIFont.systemFont(ofSize: 13)
         descriptionLabel.textColor = .ypWhite
-        descriptionLabel.translatesAutoresizingMaskIntoConstraints = false
+        descriptionLabel.accessibilityIdentifier = "descriptionLabel"
         
         logoutButton.setImage(UIImage(named: "Exit"), for: .normal)
         logoutButton.addTarget(self, action: #selector(didTapLogoutButton), for: .touchUpInside)
-        logoutButton.translatesAutoresizingMaskIntoConstraints = false
-        
-        [imageView, nameLabel, loginNameLabel, descriptionLabel, logoutButton].forEach {
-            view.addSubview($0)
-        }
+        logoutButton.accessibilityIdentifier = "logoutВutton"
     }
     
-    // MARK: - Layout
     private func setupLayout() {
         NSLayoutConstraint.activate([
             imageView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor,
@@ -91,65 +92,22 @@ final class ProfileViewController: UIViewController {
         ])
     }
     
-    // MARK: - Observers
-    private func setupObservers() {
-        if let profile = ProfileService.shared.profile {
-            updateProfileDetails(profile)
-        }
-        
-        profileImageServiceObserver = NotificationCenter.default.addObserver(
-            forName: ProfileImageService.didChangeNotification,
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in
-            self?.updateAvatar()
-        }
+    // MARK: - UI Updates (ProfileViewControllerProtocol)
+    func updateProfileDetails(name: String, login: String, bio: String) {
+        nameLabel.text = name
+        loginNameLabel.text = login
+        descriptionLabel.text = bio
     }
     
-    // MARK: - Update UI
-    private func updateProfileDetails(_ profile: Profile) {
-        nameLabel.text = profile.name
-        loginNameLabel.text = profile.loginName
-        descriptionLabel.text = profile.bio
-    }
-    
-    private func updateAvatar() {
-        guard
-            let profileImageURL = ProfileImageService.shared.avatarURL,
-            let url = URL(string: profileImageURL)
-        else { return }
-        
-        print("imageUrl: \(url)")
-        
-        let placeholderImage = UIImage(systemName: "person.circle.fill")?
-            .withTintColor(.lightGray, renderingMode: .alwaysOriginal)
-            .withConfiguration(UIImage.SymbolConfiguration(pointSize: 70,
-                                                           weight: .regular,
-                                                           scale: .large))
-        
+    func updateAvatar(with url: URL) {
         let processor = RoundCornerImageProcessor(cornerRadius: 35)
         imageView.kf.indicatorType = .activity
-        imageView.kf.setImage(
-            with: url,
-            placeholder: placeholderImage,
-            options: [
-                .processor(processor),
-                .scaleFactor(UIScreen.main.scale),
-                .cacheOriginalImage
-            ]
-        ) { result in
-            switch result {
-            case .success(let value):
-                print("✅ Avatar loaded from: \(value.source)")
-            case .failure(let error):
-                print("❌ Avatar load error: \(error)")
-            }
-        }
+        imageView.kf.setImage(with: url,
+                              placeholder: UIImage(named: "avatar"),
+                              options: [.processor(processor)])
     }
     
-    // MARK: - Actions
-    @objc
-    private func didTapLogoutButton() {
+    func showLogoutAlert() {
         let alert = UIAlertController(
             title: "Выход из аккаунта",
             message: "Вы уверены, что хотите выйти?",
@@ -158,21 +116,17 @@ final class ProfileViewController: UIViewController {
         alert.addAction(UIAlertAction(title: "Отмена", style: .cancel))
         alert.addAction(UIAlertAction(title: "Выйти", style: .destructive) { _ in
             ProfileLogoutService.shared.logout()
-            
             guard let window = UIApplication.shared.windows.first else { return }
-            let splashViewController = SplashViewController()
-            window.rootViewController = splashViewController
+            let splashVC = SplashViewController()
+            window.rootViewController = splashVC
             window.makeKeyAndVisible()
         })
-        
         present(alert, animated: true)
     }
     
-    // MARK: - Deinit
-    deinit {
-        if let observer = profileImageServiceObserver {
-            NotificationCenter.default.removeObserver(observer)
-        }
+    // MARK: - Actions
+    @objc func didTapLogoutButton() {
+        presenter.didTapLogout()
     }
 }
 
