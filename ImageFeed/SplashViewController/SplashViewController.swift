@@ -8,21 +8,21 @@ final class SplashViewController: UIViewController {
         imageView.contentMode = .scaleAspectFit
         return imageView
     }()
-
+    
     private let storage = OAuth2TokenStorage.shared
     private let profileService = ProfileService.shared
     private var isAuthorizing = false
-
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .ypBlack  
         setupLogo()
     }
-
+    
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         
-
+        
         if let token = storage.token {
             print("🔑 SplashViewController token:", token)
             fetchProfile(token)
@@ -31,16 +31,16 @@ final class SplashViewController: UIViewController {
             showAuthViewController()
         }
     }
-
+    
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         setNeedsStatusBarAppearanceUpdate()
     }
-
+    
     override var preferredStatusBarStyle: UIStatusBarStyle {
         .lightContent
     }
-
+    
     // MARK: - UI Setup
     private func setupLogo() {
         view.addSubview(logoImageView)
@@ -49,7 +49,7 @@ final class SplashViewController: UIViewController {
             logoImageView.centerYAnchor.constraint(equalTo: view.centerYAnchor)
         ])
     }
-
+    
     // MARK: - Navigation
     private func showAuthViewController() {
         let storyboard = UIStoryboard(name: "Main", bundle: .main)
@@ -61,7 +61,7 @@ final class SplashViewController: UIViewController {
         authVC.modalPresentationStyle = .fullScreen
         present(authVC, animated: true)
     }
-
+    
     // MARK: - Network
     private func fetchProfile(_ token: String) {
         profileService.fetchProfile(token) { [weak self] result in
@@ -69,9 +69,9 @@ final class SplashViewController: UIViewController {
             switch result {
             case .success(let profile):
                 print("✅ Profile loaded:", profile)
-
+                
                 ProfileImageService.shared.fetchProfileImageURL(username: profile.username) { _ in }
-
+                
                 DispatchQueue.main.async {
                     self.switchToTabBarController()
                 }
@@ -80,13 +80,13 @@ final class SplashViewController: UIViewController {
             }
         }
     }
-
+    
     private func switchToTabBarController() {
         guard let window = UIApplication.shared.windows.first else {
             assertionFailure("Invalid window configuration")
             return
         }
-
+        
         let tabBarController = UIStoryboard(name: "Main", bundle: .main)
             .instantiateViewController(withIdentifier: "TabBarViewController")
         window.rootViewController = tabBarController

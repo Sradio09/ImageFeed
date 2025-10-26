@@ -1,5 +1,9 @@
 {
+<<<<<<< HEAD
   "originHash" : "3cf58fbd95cdfb6a2eb6d20ad73f06de8e16114d36bf6854d209a98aa2d67975",
+=======
+  "originHash" : "3d08a43e4790ac7d67627616da54b8339effbdab3150531202c0b4d26de0644c",
+>>>>>>> 2a3f639852c7f16e2e003d26fb8b62328f18b219
   "pins" : [
     {
       "identity" : "kingfisher",

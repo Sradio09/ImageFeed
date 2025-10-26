@@ -16,6 +16,11 @@ final class TabBarController: UITabBarController {
         let imagesListViewController = storyboard.instantiateViewController(
             withIdentifier: "ImagesListViewController"
         )
+        imagesListViewController.tabBarItem = UITabBarItem(
+            title: "",
+            image: UIImage(named: "tab_editorial_active"),
+            selectedImage: nil
+        )
         
         let profileViewController = ProfileViewController()
         profileViewController.tabBarItem = UITabBarItem(
@@ -24,22 +29,18 @@ final class TabBarController: UITabBarController {
             selectedImage: nil
         )
         
-        self.viewControllers = [imagesListViewController, profileViewController]
+        viewControllers = [imagesListViewController, profileViewController]
     }
     
     // MARK: - Appearance
     private func configureTabBarAppearance() {
-        // Загружаем цвет из ассетов
         let ypBlack = UIColor(named: "YP Black") ?? .black
-
-        // Базовые цвета таббара
         tabBar.barTintColor = ypBlack
         tabBar.backgroundColor = ypBlack
         tabBar.isTranslucent = false
         tabBar.tintColor = .white
         tabBar.unselectedItemTintColor = .lightGray
-
-        // Для iOS 13+ — задаём стабильный внешний вид
+        
         if #available(iOS 13.0, *) {
             let appearance = UITabBarAppearance()
             appearance.configureWithOpaqueBackground()
