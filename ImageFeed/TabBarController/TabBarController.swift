@@ -13,22 +13,32 @@ final class TabBarController: UITabBarController {
     private func setupViewControllers() {
         let storyboard = UIStoryboard(name: "Main", bundle: .main)
         
-        let imagesListViewController = storyboard.instantiateViewController(
+        // MARK: - Images List
+        guard let imagesListViewController = storyboard.instantiateViewController(
             withIdentifier: "ImagesListViewController"
-        )
+        ) as? ImagesListViewController else {
+            assertionFailure("❌ Не удалось найти ImagesListViewController в Storyboard")
+            return
+        }
+        let imagesListPresenter = ImagesListPresenter()
+        imagesListViewController.configure(imagesListPresenter)
         imagesListViewController.tabBarItem = UITabBarItem(
             title: "",
             image: UIImage(named: "tab_editorial_active"),
             selectedImage: nil
         )
         
+        // MARK: - Profile
         let profileViewController = ProfileViewController()
+        let profilePresenter = ProfilePresenter()
+        profileViewController.configure(profilePresenter)
         profileViewController.tabBarItem = UITabBarItem(
             title: "",
             image: UIImage(named: "tab_profile_active"),
             selectedImage: nil
         )
         
+        // MARK: - Combine
         viewControllers = [imagesListViewController, profileViewController]
     }
     

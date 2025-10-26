@@ -6,6 +6,11 @@ final class SingleImageViewController: UIViewController {
     
     @IBOutlet private var scrollView: UIScrollView!
     @IBOutlet private var imageView: UIImageView!
+    @IBOutlet private weak var backButton: UIButton! {
+           didSet {
+               backButton.accessibilityIdentifier = "nav back button white"
+           }
+       }
     
     override func viewDidLoad() {
         super.viewDidLoad()

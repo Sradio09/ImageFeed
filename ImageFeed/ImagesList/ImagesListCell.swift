@@ -80,6 +80,10 @@ final class ImagesListCell: UITableViewCell {
             ? UIImage(resource: .likeButtonOn)
             : UIImage(resource: .likeButtonOff)
         likeButton.setImage(image, for: .normal)
+        
+        likeButton.accessibilityIdentifier = isLiked
+        ? "likeButtonOn"
+        : "likeButtonOff"
     }
 
     func setLikeLoading(_ isLoading: Bool) {
