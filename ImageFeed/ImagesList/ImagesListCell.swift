@@ -17,6 +17,7 @@ final class ImagesListCell: UITableViewCell {
     
     private var gradientLayer: CAGradientLayer?
     private var isLoadingLike = false
+    private var currentIsLiked = false
     private var activityIndicator: UIActivityIndicatorView?
     
     static let dateFormatter: DateFormatter = {
@@ -29,7 +30,6 @@ final class ImagesListCell: UITableViewCell {
     override func layoutSubviews() {
         super.layoutSubviews()
         addGradient()
-        
         gradientView.layer.cornerRadius = 16
         gradientView.layer.maskedCorners = [.layerMinXMaxYCorner, .layerMaxXMaxYCorner]
         gradientView.layer.masksToBounds = true
@@ -67,18 +67,21 @@ final class ImagesListCell: UITableViewCell {
         
         setIsLiked(photo.isLiked)
     }
+    
     // MARK: - Лайк
-    @IBAction func likeButtonTapped(_ sender: UIButton) {
+    @IBAction private func likeButtonTapped(_ sender: UIButton) {
         guard !isLoadingLike else { return }
         delegate?.imageListCellDidTapLike(self)
     }
     
     func setIsLiked(_ isLiked: Bool) {
-        let imageName = isLiked ? "likeButtonOn" : "likeButtonOff"
-        likeButton.setImage(UIImage(named: imageName), for: .normal)
-        likeButton.isSelected = isLiked
+        currentIsLiked = isLiked
+        let image = isLiked
+            ? UIImage(resource: .likeButtonOn)
+            : UIImage(resource: .likeButtonOff)
+        likeButton.setImage(image, for: .normal)
     }
-    
+
     func setLikeLoading(_ isLoading: Bool) {
         isLoadingLike = isLoading
         likeButton.isEnabled = !isLoading
@@ -94,8 +97,7 @@ final class ImagesListCell: UITableViewCell {
         } else {
             activityIndicator?.removeFromSuperview()
             activityIndicator = nil
-            let imageName = likeButton.isSelected ? "likeButtonOn" : "likeButtonOff"
-            likeButton.setImage(UIImage(named: imageName), for: .normal)
+            setIsLiked(currentIsLiked)
         }
     }
     
@@ -103,11 +105,13 @@ final class ImagesListCell: UITableViewCell {
         super.prepareForReuse()
         photoImageView.kf.cancelDownloadTask()
         photoImageView.image = nil
-        likeButton.isSelected = false
         dateLabel.text = nil
         isLoadingLike = false
+        currentIsLiked = false
         activityIndicator?.removeFromSuperview()
         activityIndicator = nil
+        likeButton.isEnabled = true
+        likeButton.setImage(UIImage(resource: .likeButtonOff), for: .normal)
     }
 }
 

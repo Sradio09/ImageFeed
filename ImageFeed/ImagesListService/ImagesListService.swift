@@ -13,6 +13,12 @@ final class ImagesListService {
     private var task: URLSessionTask?
     private var lastLoadedPage: Int?
     
+    private lazy var isoFormatter: ISO8601DateFormatter = {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return formatter
+    }()
+    
     // MARK: - Очистка
     func clean() {
         photos.removeAll()
@@ -136,15 +142,19 @@ final class ImagesListService {
         return request
     }
     
-    private lazy var isoFormatter: ISO8601DateFormatter = {
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        return formatter
-    }()
-    
     private func convert(photoResult: PhotoResult) -> Photo {
         let size = CGSize(width: photoResult.width, height: photoResult.height)
-        let date = isoFormatter.date(from: photoResult.createdAt ?? "")
+        var date: Date? = nil
+        
+        if let createdAt = photoResult.createdAt {
+            date = isoFormatter.date(from: createdAt)
+            
+            if date == nil {
+                let fallbackFormatter = ISO8601DateFormatter()
+                fallbackFormatter.formatOptions = [.withInternetDateTime]
+                date = fallbackFormatter.date(from: createdAt)
+            }
+        }
         
         return Photo(
             id: photoResult.id,
@@ -157,6 +167,7 @@ final class ImagesListService {
             isLiked: photoResult.likedByUser
         )
     }
+
     
 }
 

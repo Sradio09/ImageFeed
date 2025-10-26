@@ -23,7 +23,6 @@ final class OAuth2Service {
         static let tokenURL = "https://unsplash.com/oauth/token"
     }
     
-    // Очередь для синхронизации
     private let syncQueue = DispatchQueue(label: OAuth2Constants.syncQueueLabel)
     
     func fetchOAuthToken(code: String, completion: @escaping (Result<String, Error>) -> Void) {
@@ -81,8 +80,8 @@ final class OAuth2Service {
     private func makeOAuthTokenRequest(code: String) -> URLRequest? {
         guard let url = URL(string: OAuth2Constants.tokenURL) else { return nil }
         
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
+        var urlRequest = URLRequest(url: url)
+        urlRequest.method = .post
         let bodyParams = [
             "client_id": Constants.accessKey,
             "client_secret": Constants.secretKey,
@@ -90,13 +89,13 @@ final class OAuth2Service {
             "code": code,
             "grant_type": "authorization_code"
         ]
-        request.httpBody = bodyParams
+        urlRequest.httpBody = bodyParams
             .map { "\($0.key)=\($0.value)" }
             .joined(separator: "&")
             .data(using: .utf8)
-        request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+        urlRequest.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
         
-        return request
+        return urlRequest
     }
     
     enum OAuth2Error: Error {
