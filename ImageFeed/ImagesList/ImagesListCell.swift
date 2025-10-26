@@ -1,7 +1,14 @@
 import UIKit
+import Kingfisher
+
+protocol ImagesListCellDelegate: AnyObject {
+    func imageListCellDidTapLike(_ cell: ImagesListCell)
+}
 
 final class ImagesListCell: UITableViewCell {
     static let reuseIdentifier = "ImagesListCell"
+    
+    weak var delegate: ImagesListCellDelegate?
     
     @IBOutlet weak var likeButton: UIButton!
     @IBOutlet weak var gradientView: UIView!
@@ -9,12 +16,20 @@ final class ImagesListCell: UITableViewCell {
     @IBOutlet weak var dateLabel: UILabel!
     
     private var gradientLayer: CAGradientLayer?
-    var onLikeButtonTapped: (() -> Void)?
+    private var isLoadingLike = false
+    private var currentIsLiked = false
+    private var activityIndicator: UIActivityIndicatorView?
+    
+    static let dateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "ru_RU")
+        formatter.dateFormat = "d MMMM yyyy"
+        return formatter
+    }()
     
     override func layoutSubviews() {
         super.layoutSubviews()
         addGradient()
-        
         gradientView.layer.cornerRadius = 16
         gradientView.layer.maskedCorners = [.layerMinXMaxYCorner, .layerMaxXMaxYCorner]
         gradientView.layer.masksToBounds = true
@@ -35,8 +50,68 @@ final class ImagesListCell: UITableViewCell {
         gradientLayer = gradient
     }
     
-    @IBAction func likeButtonTapped(_ sender: UIButton) {
-        sender.isSelected.toggle()
-        onLikeButtonTapped?()
+    // MARK: - Конфигурация
+    func configure(with photo: Photo) {
+        if let url = URL(string: photo.thumbImageURL) {
+            photoImageView.kf.indicatorType = .activity
+            photoImageView.kf.setImage(with: url)
+        } else {
+            photoImageView.image = UIImage(resource: .stub)
+        }
+        
+        if let date = photo.createdAt {
+            dateLabel.text = Self.dateFormatter.string(from: date)
+        } else {
+            dateLabel.text = ""
+        }
+        
+        setIsLiked(photo.isLiked)
+    }
+    
+    // MARK: - Лайк
+    @IBAction private func likeButtonTapped(_ sender: UIButton) {
+        guard !isLoadingLike else { return }
+        delegate?.imageListCellDidTapLike(self)
+    }
+    
+    func setIsLiked(_ isLiked: Bool) {
+        currentIsLiked = isLiked
+        let image = isLiked
+            ? UIImage(resource: .likeButtonOn)
+            : UIImage(resource: .likeButtonOff)
+        likeButton.setImage(image, for: .normal)
+    }
+
+    func setLikeLoading(_ isLoading: Bool) {
+        isLoadingLike = isLoading
+        likeButton.isEnabled = !isLoading
+        
+        if isLoading {
+            let indicator = UIActivityIndicatorView(style: .medium)
+            indicator.color = .white
+            indicator.center = CGPoint(x: likeButton.bounds.midX, y: likeButton.bounds.midY)
+            indicator.startAnimating()
+            likeButton.addSubview(indicator)
+            activityIndicator = indicator
+            likeButton.setImage(nil, for: .normal)
+        } else {
+            activityIndicator?.removeFromSuperview()
+            activityIndicator = nil
+            setIsLiked(currentIsLiked)
+        }
+    }
+    
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        photoImageView.kf.cancelDownloadTask()
+        photoImageView.image = nil
+        dateLabel.text = nil
+        isLoadingLike = false
+        currentIsLiked = false
+        activityIndicator?.removeFromSuperview()
+        activityIndicator = nil
+        likeButton.isEnabled = true
+        likeButton.setImage(UIImage(resource: .likeButtonOff), for: .normal)
     }
 }
+

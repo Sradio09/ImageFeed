@@ -10,6 +10,10 @@ final class ProfileService {
     private var lastToken: String?
     private var completions: [(Result<Profile, Error>) -> Void] = []
     
+    func clean() {
+        profile = nil
+    }
+    
     func fetchProfile(_ token: String, completion: @escaping (Result<Profile, Error>) -> Void) {
         if lastToken == token, task != nil {
             completions.append(completion)
@@ -55,7 +59,7 @@ final class ProfileService {
     private func makeProfileRequest(token: String) -> URLRequest? {
         guard let url = URL(string: "https://api.unsplash.com/me") else { return nil }
         var request = URLRequest(url: url)
-        request.httpMethod = "GET"
+        request.method = .get
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         return request
     }
@@ -70,4 +74,4 @@ final class ProfileService {
     }
 }
 
- 
+
